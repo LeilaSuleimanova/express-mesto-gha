@@ -2,6 +2,7 @@ const { default: mongoose } = require('mongoose');
 const {
   Created,
 } = require('../utils/constants');
+
 const User = require('../models/user');
 const BadRequestError = require('../utils/badRequestError');
 const NotFoundError = require('../utils/notFoundError');

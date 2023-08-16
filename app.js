@@ -13,11 +13,10 @@ mongoose.connect(DB_URL, {
   useNewUrlParser: true,
 });
 
-app.use((req, res, next) => {
+app.use((req, res) => {
   req.user = {
     _id: '64ce5fe69a309ff1e1789321', // вставьте сюда _id созданного в предыдущем пункте пользователя
   };
-  next();
 });
 
 app.use('/users', require('./routes/users'));

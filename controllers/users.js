@@ -1,3 +1,4 @@
+const httpConstants = require('http2').constants;
 const { default: mongoose } = require('mongoose');
 const {
   Created,
@@ -9,7 +10,7 @@ const NotFoundError = require('../utils/notFoundError');
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => res.send({ users }))
+    .then((users) => res.status(httpConstants.HTTP_STATUS_OK).send(users))
     .catch(next);
 };
 
@@ -17,7 +18,7 @@ module.exports.getUserId = (req, res, next) => {
   User.findById(req.params.userId)
     .orFail()
     .then((user) => {
-      res.status(user);
+      res.status(httpConstants.HTTP_STATUS_OK).send(user);
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {

@@ -1,37 +1,34 @@
 const { default: mongoose } = require('mongoose');
 const Card = require('../models/card');
-const {
-  CastError,
-  DocumentNotFoundError,
-  ServerError,
-} = require('../utils/constants');
+const BadRequestError = require('../utils/badRequestError');
+const NotFoundError = require('../utils/notFoundError');
 
-module.exports.addCard = (req, res) => {
+module.exports.addCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => {
       Card.findById(card._id)
         .populate('owner')
         .then((data) => res.send(data))
-        .catch(() => res.status(DocumentNotFoundError).send({ message: 'Карточка по id не найдена.' }));
+        .catch(() => next(new NotFoundError('Карточка по id не найдена.')));
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(CastError).send({ message: err.message });
+        next(new BadRequestError(err.message));
       } else {
-        res.status(ServerError).send({ message: 'На сервере произошла ошибка' });
+        next(err);
       }
     });
 };
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .populate(['owner', 'likes'])
     .then((cards) => res.send(cards))
-    .catch(() => res.status(ServerError).send({ message: 'На сервере произошла ошибка' }));
+    .catch(next);
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   Card.findByIdAndRemove(req.params.cardId)
     .orFail()
     .then((card) => {
@@ -39,16 +36,16 @@ module.exports.deleteCard = (req, res) => {
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        res.status(CastError).send({ message: 'Некорректный id карточки.' });
+        next(new BadRequestError('Некорректный id карточки.'));
       } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        res.status(DocumentNotFoundError).send({ message: 'Карточка с указанным id не найдена.' });
+        next(new NotFoundError('Карточка по id не найдена.'));
       } else {
-        res.status(ServerError).send({ message: 'Произошла ошибка.' });
+        next(err);
       }
     });
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
     .populate(['owner', 'likes'])
     .orFail()
@@ -57,16 +54,16 @@ module.exports.likeCard = (req, res) => {
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        res.status(CastError).send({ message: 'Некорректный id карточки.' });
+        next(new BadRequestError('Некорректный id карточки.'));
       } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        res.status(DocumentNotFoundError).send({ message: 'Карточка с указанным id не найдена.' });
+        next(new NotFoundError('Карточка по id не найдена.'));
       } else {
-        res.status(ServerError).send({ message: 'Произошла ошибка.' });
+        next(err);
       }
     });
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
     .populate(['owner', 'likes'])
     .orFail()
@@ -75,11 +72,11 @@ module.exports.dislikeCard = (req, res) => {
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        res.status(CastError).send({ message: 'Некорректный id карточки.' });
+        next(new BadRequestError('Некорректный id карточки.'));
       } else if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        res.status(DocumentNotFoundError).send({ message: 'Карточка с указанным id не найдена.' });
+        next(new NotFoundError('Карточка по id не найдена.'));
       } else {
-        res.status(ServerError).send({ message: 'Произошла ошибка.' });
+        next(err);
       }
     });
 };
